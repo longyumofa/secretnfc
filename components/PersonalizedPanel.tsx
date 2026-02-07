@@ -9,7 +9,7 @@ interface Props {
 }
 
 const PersonalizedPanel: React.FC<Props> = ({ verifyResult }) => {
-  const { uidHex, epcHex, tokenHex, ivHex, decryptedHex, validationDetails } = verifyResult;
+  const { uidHex, validationDetails } = verifyResult;
 
   return (
     <div className="bg-slate-900/40 backdrop-blur-3xl border border-white/10 shadow-2xl rounded-[2.5rem] overflow-hidden">
@@ -23,7 +23,7 @@ const PersonalizedPanel: React.FC<Props> = ({ verifyResult }) => {
           </p>
         </div>
 
-        <div className="flex-grow grid grid-cols-1 sm:grid-cols-2 gap-8 w-full">
+        <div className="flex-grow grid grid-cols-1 gap-8 w-full">
           <div className="space-y-3">
             <div className="flex items-center space-x-2 text-slate-500">
               <Cpu size={14} />
@@ -33,35 +33,15 @@ const PersonalizedPanel: React.FC<Props> = ({ verifyResult }) => {
               {uidHex || 'N/A'}
             </p>
           </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center space-x-2 text-slate-500">
-              <Tag size={14} />
-              <span className="text-[9px] font-black uppercase tracking-[0.2em]">Encoded EPC</span>
-            </div>
-            <p className="font-mono text-[11px] bg-black/40 p-4 rounded-xl text-slate-300 break-all select-all border border-white/5 shadow-inner">
-              {epcHex || 'N/A'}
-            </p>
-          </div>
-
-          <div className="space-y-3 sm:col-span-2">
-            <div className="flex items-center space-x-2 text-slate-500">
-              <Key size={14} />
-              <span className="text-[9px] font-black uppercase tracking-[0.2em]">Authenticated Token</span>
-            </div>
-            <p className="font-mono text-[11px] bg-black/40 p-4 rounded-xl text-slate-300 select-all border border-white/5 shadow-inner">
-              {tokenHex || 'N/A'}
-            </p>
-          </div>
         </div>
       </div>
 
       {/* Main Dashboard Content */}
       <div className="p-8 sm:p-10">
-        <div className="grid lg:grid-cols-5 gap-10">
+        <div className="grid lg:grid-cols-1 gap-10">
           
           {/* Left Column: Technical Audit */}
-          <div className="lg:col-span-3 space-y-10">
+          <div className="space-y-10">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <Activity size={18} className="text-blue-400" />
@@ -70,21 +50,6 @@ const PersonalizedPanel: React.FC<Props> = ({ verifyResult }) => {
               <div className="flex items-center gap-2 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span className="text-[9px] text-emerald-400 font-black uppercase tracking-widest">Status: Nominal</span>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-[9px] text-slate-600 font-black uppercase tracking-[0.2em] ml-1">Initialization Vector (AES-IV)</label>
-                <div className="font-mono text-[10px] text-blue-400 bg-black/60 p-5 rounded-2xl border border-white/5 break-all shadow-inner leading-relaxed">
-                  {ivHex}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-[9px] text-slate-600 font-black uppercase tracking-[0.2em] ml-1">Decrypted Output</label>
-                <div className="font-mono text-[11px] text-emerald-400 bg-black/60 p-5 rounded-2xl border border-emerald-500/10 break-all shadow-inner leading-relaxed">
-                  {decryptedHex}
-                </div>
               </div>
             </div>
 
@@ -105,13 +70,6 @@ const PersonalizedPanel: React.FC<Props> = ({ verifyResult }) => {
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
-
-          {/* Right Column: Asset Upload */}
-          <div className="lg:col-span-2 space-y-8">
-            <div className="p-8 rounded-[2.5rem] bg-gradient-to-b from-white/[0.03] to-transparent border border-white/5 h-full">
-              <FileUpload />
             </div>
           </div>
         </div>
