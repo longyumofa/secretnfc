@@ -6,10 +6,43 @@ import cors from 'cors';
 import multer from 'multer';
 import fs from 'fs';
 
+// 持久化存储访问日志
+const accessLogsPath = path.join(process.cwd(), 'accessLogs.json');
+
+// 加载现有访问日志
+let accessLogs: Record<string, string[]> = {};
+try {
+  if (fs.existsSync(accessLogsPath)) {
+    const data = fs.readFileSync(accessLogsPath, 'utf8');
+    const loadedData = JSON.parse(data);
+    
+    // 转换旧格式（字符串）到新格式（数组）
+    for (const [uid, value] of Object.entries(loadedData)) {
+      if (typeof value === 'string') {
+        accessLogs[uid] = [value];
+      } else if (Array.isArray(value)) {
+        accessLogs[uid] = value;
+      } else {
+        accessLogs[uid] = [];
+      }
+    }
+  }
+} catch (e) {
+  console.error('Failed to load access logs:', e);
+  accessLogs = {};
+}
+
+// 保存访问日志
+function saveAccessLogs() {
+  try {
+    fs.writeFileSync(accessLogsPath, JSON.stringify(accessLogs, null, 2));
+  } catch (e) {
+    console.error('Failed to save access logs:', e);
+  }
+}
+
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
-    
-    const accessLogs = {};
     
     const uploadDir = path.join(process.cwd(), 'upload');
     if (!fs.existsSync(uploadDir)) {
@@ -35,6 +68,7 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 3000,
         host: '0.0.0.0',
+        allowedHosts: ['longyumofa.cn']
       },
       plugins: [
         react(),
@@ -49,10 +83,21 @@ export default defineConfig(({ mode }) => {
 
             app.post('/api/verify', (req, res) => {
                 const { uid, token } = req.body;
-                if (accessLogs[uid] === token) {
+                console.log('Verification request:', { uid, token });
+                // 初始化 UID 的令牌数组（如果不存在）
+                if (!accessLogs[uid]) {
+                    accessLogs[uid] = [];
+                    console.log('Created new UID entry:', uid);
+                }
+                // 检查令牌是否已存在
+                if (accessLogs[uid].includes(token)) {
+                    console.log('Duplicate token detected:', { uid, token });
                     return res.status(409).json({ error: 'TOKEN_EXPIRED' });
                 }
-                accessLogs[uid] = token;
+                // 添加新令牌
+                accessLogs[uid].push(token);
+                console.log('Added new token:', { uid, token, tokens: accessLogs[uid].length });
+                saveAccessLogs(); // 保存到文件
                 res.json({ status: 'success' });
             });
 

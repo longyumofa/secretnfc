@@ -144,33 +144,7 @@ export async function verifyHkParams(query: URLSearchParams): Promise<Verificati
 
   if (!rawUidStr || !sigStr) return result;
 
-  // --- ACTUAL BACKEND CROSS-DEVICE REPLAY PROTECTION ---
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uid: rawUidStr, token: tokenStr })
-    });
-
-    if (response.status === 409) {
-      // Replay detected by the global backend
-      result.errorCode = 'TOKEN_EXPIRED';
-      result.validationDetails.serverSync = true;
-      return result;
-    }
-
-    if (!response.ok) {
-        throw new Error('Server returned error status');
-    }
-
-    result.validationDetails.serverSync = true;
-  } catch (e) {
-    console.error("Critical Backend Sync Fault:", e);
-    result.errorCode = 'SERVER_ERROR';
-    return result;
-  }
-
-  // --- CRYPTOGRAPHIC VERIFICATION ---
+  // --- CRYPTOGRAPHIC VERIFICATION ---  (先进行加密验证)
   try {
     const aes = new AesCbcEngine(KEY);
     const decrypted = aes.decryptCbc(sigBytes, effectiveIv);
@@ -196,9 +170,38 @@ export async function verifyHkParams(query: URLSearchParams): Promise<Verificati
     
     if (!result.isValid) {
       result.errorCode = 'SIG_MISMATCH';
+      return result; // 加密验证失败，直接返回
     }
   } catch (e) {
     result.errorCode = 'SIG_MISMATCH';
+    return result; // 加密验证失败，直接返回
+  }
+
+  // --- ACTUAL BACKEND CROSS-DEVICE REPLAY PROTECTION --- (后进行重复访问检测)
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid: rawUidStr, token: tokenStr })
+    });
+
+    if (response.status === 409) {
+      // Replay detected by the global backend
+      result.errorCode = 'TOKEN_EXPIRED';
+      result.isValid = false; // 重要：设置为无效
+      result.validationDetails.serverSync = true;
+      return result;
+    }
+
+    if (!response.ok) {
+        throw new Error('Server returned error status');
+    }
+
+    result.validationDetails.serverSync = true;
+  } catch (e) {
+    console.error("Critical Backend Sync Fault:", e);
+    result.errorCode = 'SERVER_ERROR';
+    return result;
   }
 
   return result;
